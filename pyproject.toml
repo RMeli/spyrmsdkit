@@ -1,0 +1,49 @@
+[build-system]
+requires = [
+  "setuptools >= 40.9.0",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spyrmsdkit"
+description = "MDAnalysis Kit (MDAKit) for SPyRMSD"
+license = {file = "LICENSE" }
+authors = [
+    {name = "Rocco Meli", email = "r.meli@bluemail.ch"},
+]
+maintainers = [
+    {name = "Rocco Meli", email = "r.meli@bluemail.ch"},
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "MDAnalysis>=2.0.0",
+]
+keywords = [
+    "molecular simulations",
+]
+dynamic = [
+    "version",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=6.0",
+    "pytest-xdist>=2.5",
+    "pytest-cov>=3.0",
+]
+doc = [
+    "sphinx",
+    "sphinx_rtd_theme",
+]
+
+# [project.urls]
+# source = "https://github.com/RMeli/spyrmsdkit"
+# documentation = "https://spyrmsdkit.readthedocs.io"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "spyrmsdkit/tests",
+]
