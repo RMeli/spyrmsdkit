@@ -13,6 +13,7 @@ import numpy as np
 if TYPE_CHECKING:
     from MDAnalysis.core.universe import Universe, AtomGroup
 
+
 class SPyRMSD(AnalysisBase):
     """SPyRMSD class.
 
@@ -25,7 +26,8 @@ class SPyRMSD(AnalysisBase):
         If a trajectory is associated with the atoms,
         then the computation iterates over the trajectory.
     select: str
-        Selection string for atoms to extract from the input Universe or AtomGroup
+        Selection string for atoms to extract from the input Universe or
+        AtomGroup
 
     Attributes
     ----------
@@ -52,7 +54,6 @@ class SPyRMSD(AnalysisBase):
         :meth:`SPyRMSD.run`
     """
 
-
     def __init__(
         self,
         universe_or_atomgroup: Union["Universe", "AtomGroup"],
@@ -70,8 +71,6 @@ class SPyRMSD(AnalysisBase):
 
         self.universe = universe_or_atomgroup.universe
         self.atomgroup = universe_or_atomgroup.select_atoms(select)
-
-        
 
     def _prepare(self):
         """Set things up before the analysis loop begins"""
@@ -92,7 +91,7 @@ class SPyRMSD(AnalysisBase):
         # It can contain the main analysis method, or just collect data
         # so that analysis can be done over the aggregate data
         # in _conclude.
-        
+
         # The trajectory positions update automatically
         negative = self.atomgroup.positions < 0
         # You can access the frame number using self._frame_index
@@ -107,8 +106,10 @@ class SPyRMSD(AnalysisBase):
         # For example, below we determine the
         # which atoms always have negative coordinates.
         self.results.always_negative = self.results.is_negative.all(axis=0)
-        self.results.always_negative_atoms = self.atomgroup[self.results.always_negative]
-        self.results.always_negative_atom_names = self.results.always_negative_atoms.names
+        self.results.always_negative_atoms = \
+            self.atomgroup[self.results.always_negative]
+        self.results.always_negative_atom_names = \
+            self.results.always_negative_atoms.names
 
         # results don't have to be arrays -- they can be any value, e.g. floats
         self.results.n_negative_atoms = self.results.is_negative.sum(axis=1)
