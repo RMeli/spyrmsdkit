@@ -9,7 +9,8 @@ dependencies:
 
   # MDAnalysis
   - MDAnalysis
-  
+
+  - spyrmsd
 
   # Testing
   - pytest
