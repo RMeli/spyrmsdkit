@@ -5,14 +5,17 @@ SPyRMSD --- :mod:`spyrmsdkit.analysis.SPyRMSD`
 This module contains the :class:`SPyRMSD` class.
 
 """
-from typing import Union, TYPE_CHECKING
-
 from MDAnalysis.analysis.base import AnalysisBase
+
+from typing import Union, TYPE_CHECKING
+import logging
 import numpy as np
+# TODO: Add due
 
 if TYPE_CHECKING:
     from MDAnalysis.core.universe import Universe, AtomGroup
 
+logger = logging.getLogger("MDanalysis.analysis.spyrmsd")
 
 class SPyRMSD(AnalysisBase):
     """SPyRMSD class.
@@ -21,13 +24,15 @@ class SPyRMSD(AnalysisBase):
 
     Parameters
     ----------
-    universe_or_atomgroup: :class:`~MDAnalysis.core.universe.Universe` or :class:`~MDAnalysis.core.groups.AtomGroup`
-        Universe or group of atoms to apply this analysis to.
-        If a trajectory is associated with the atoms,
-        then the computation iterates over the trajectory.
-    select: str
-        Selection string for atoms to extract from the input Universe or
-        AtomGroup
+    mobile : AtomGroup
+        Group of atoms for which the RMSD is calculated. If a trajectory is
+        associated with the atoms then the computation iterates over the
+        trajectory.
+    reference : AtomGroup (optional)
+        Group of reference atoms; if ``None`` then the current frame of
+        `atomgroup` is used.
+    ref_frame : int (optional)
+        frame index to select frame from `reference`
 
     Attributes
     ----------
@@ -52,65 +57,116 @@ class SPyRMSD(AnalysisBase):
     frames: numpy.ndarray
         array of Timestep frame indices. Only exists after calling
         :meth:`SPyRMSD.run`
+    
+    Raises
+    ------
+    SelectionError
+        If the selections from `atomgroup` and `reference` do not match.
     """
 
     def __init__(
         self,
-        universe_or_atomgroup: Union["Universe", "AtomGroup"],
-        select: str = "all",
-        # TODO: add your own parameters here
+        mobile: "AtomGroup",
+        reference: "AtomGroup" = None,
+        reference_frame: int = 0,
         **kwargs
     ):
-        # the below line must be kept to initialize the AnalysisBase class!
-        super().__init__(universe_or_atomgroup.trajectory)
-        # after this you will be able to access `self.results`
-        # `self.results` is a dictionary-like object
-        # that can should used to store and retrieve results
-        # See more at the MDAnalysis documentation:
-        # https://docs.mdanalysis.org/stable/documentation_pages/analysis/base.html?highlight=results#MDAnalysis.analysis.base.Results
+        super().__init__(mobile.universe.trajectory, **kwargs)
+        
+        self.mobile_atoms = mobile
+        self.ref_atoms = reference if reference is not None else self.mobile_atoms
+        self.reference_frame = reference_frame
+
+        if len(self.ref_atoms) != len(self.mobile_atoms):
+            err = ("Reference and trajectory atom selections do "
+                   "not contain the same number of atoms: "
+                   f"N_ref={self.ref_atoms.n_atoms:d}, "
+                   f"N_traj={self.mobile_atoms.n_atoms:d}")
+
+            logger.exception(err)
+            raise SelectionError(err)
+
 
         self.universe = universe_or_atomgroup.universe
         self.atomgroup = universe_or_atomgroup.select_atoms(select)
 
     def _prepare(self):
-        """Set things up before the analysis loop begins"""
-        # This is an optional method that runs before
-        # _single_frame loops over the trajectory.
-        # It is useful for setting up results arrays
-        # For example, below we create an array to store
-        # the number of atoms with negative coordinates
-        # in each frame.
-        self.results.is_negative = np.zeros(
-            (self.n_frames, self.atomgroup.n_atoms),
-            dtype=bool,
-        )
+        """
+        Prepare SPyRMSD analysis.
+
+        SPyRMSD needs adjacency matrices for the molecular graphs of the
+        selections and needs to perform graph isomorphism matching. The
+        molecular graph is assumed to be constant, therefore graph
+        isomorphisms can be computed here. 
+        """
+        current_frame = self.ref_atoms.universe.trajectory.ts.frame
+
+        # Columns: frame, time, rmsd
+        self.results.rmsd = np.zeros((self.n_frames, 3))
+
+        self.ref_adj = adjacency_matrix(self.ref_atoms)
+        self.ref_aprops = self.ref_atoms.types.copy()
+
+        self.mobile_adj = adjacency_matrix(self.mobile_atoms)
+        self.mobile_aprops = self.mobile_atoms.types.copy()
+
+        # Compute isomorphisms at the first iteration
+        self.isomorphisms = None
+
+        # TODO: Check consistency of masses after graph isomorphism?
+
+        try:
+            self.ref_atoms.universe.trajectory[self.ref_frame]
+            self._ref_coordinates64 = \
+                self.ref_atoms.positions.copy().astype(np.float64)
+        finally:
+            # Move back to the original frame
+            self.ref_atoms.universe.trajectory[current_frame]
+
+        # Pre-allocate memory for the mobile coordinates
+        self._mobile_coordinates64 = \
+            self.mobile_atoms.positions.copy().astype(np.float64)
+
+        # Pre-allocate memory for the results
+        self.results.rmsd = np.zeros((self.n_frames, 3))
 
     def _single_frame(self):
         """Calculate data from a single frame of trajectory"""
-        # This runs once for each frame of the trajectory
-        # It can contain the main analysis method, or just collect data
-        # so that analysis can be done over the aggregate data
-        # in _conclude.
+        """
+        Raises
+        ------
+        ImportError
+             If the spyrmsd package is not installed
+        """
+        try:
+            import spyrmsd.rmsd
+        except ImportError:
+            raise ImportError("""ERROR --- spyrmsd was not found!
+                spyrmsd is required to compute symmetry-corrected RMSDs.
+                try installing it using pip eg:
+                    pip install spyrmsd
+                or conda eg:
+                    conda install spyrmsd -c conda-forge
+                """)
 
-        # The trajectory positions update automatically
-        negative = self.atomgroup.positions < 0
-        # You can access the frame number using self._frame_index
-        self.results.is_negative[self._frame_index] = negative.any(axis=1)
+        # Get current coordinates
+        self._mobile_coordinates64[:] = self.mobile_atoms.positions
 
-    def _conclude(self):
-        """Calculate the final results of the analysis"""
-        # This is an optional method that runs after
-        # _single_frame loops over the trajectory.
-        # It is useful for calculating the final results
-        # of the analysis.
-        # For example, below we determine the
-        # which atoms always have negative coordinates.
-        self.results.always_negative = self.results.is_negative.all(axis=0)
-        self.results.always_negative_atoms = \
-            self.atomgroup[self.results.always_negative]
-        self.results.always_negative_atom_names = \
-            self.results.always_negative_atoms.names
+        # Get frame number and time for current timestep
+        self.results.rmsd[self._frame_index, 0] = self._ts.frame
+        self.results.rmsd[self._frame_index, 1] = self._trajectory.time
 
-        # results don't have to be arrays -- they can be any value, e.g. floats
-        self.results.n_negative_atoms = self.results.is_negative.sum(axis=1)
-        self.results.mean_negative_atoms = self.results.n_negative_atoms.mean()
+        # Compute minimum RMSD from graph isomorphisms
+        min_rmsd, self.isomorphisms = spyrmsd.rmsd._rmsd_isomorphic_core(
+            self._mobile_coordinates64,
+            self._ref_coordinates64,
+            self.mobile_aprops,
+            self.ref_aprops,
+            self.mobile_adj,
+            self.ref_adj,
+            center=False,
+            minimize=False,
+            isomorphisms=self.isomorphisms,
+        )
+
+        self.results.rmsd[self._frame_index, -1] = min_rmsd
