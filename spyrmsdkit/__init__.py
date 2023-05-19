@@ -3,9 +3,6 @@ spyrmsdkit
 MDAnalysis Kit (MDAKit) for SPyRMSD
 """
 
-# Add imports here
-from .spyrmsdkit import canvas
-
 # Handle versioneer
 from ._version import get_versions
 versions = get_versions()
