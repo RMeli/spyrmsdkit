@@ -6,6 +6,9 @@ This module contains the :class:`SPyRMSD` class.
 
 """
 from MDAnalysis.analysis.base import AnalysisBase
+from MDAnalysis.exceptions import SelectionError
+
+from spyrmsdkit.analysis import utils
 
 from typing import Union, TYPE_CHECKING
 import logging
@@ -31,7 +34,7 @@ class SPyRMSD(AnalysisBase):
     reference : AtomGroup (optional)
         Group of reference atoms; if ``None`` then the current frame of
         `atomgroup` is used.
-    ref_frame : int (optional)
+    reference_frame : int (optional)
         frame index to select frame from `reference`
 
     Attributes
@@ -86,10 +89,6 @@ class SPyRMSD(AnalysisBase):
             logger.exception(err)
             raise SelectionError(err)
 
-
-        self.universe = universe_or_atomgroup.universe
-        self.atomgroup = universe_or_atomgroup.select_atoms(select)
-
     def _prepare(self):
         """
         Prepare SPyRMSD analysis.
@@ -104,10 +103,10 @@ class SPyRMSD(AnalysisBase):
         # Columns: frame, time, rmsd
         self.results.rmsd = np.zeros((self.n_frames, 3))
 
-        self.ref_adj = adjacency_matrix(self.ref_atoms)
+        self.ref_adj = utils.adjacency_matrix(self.ref_atoms)
         self.ref_aprops = self.ref_atoms.types.copy()
 
-        self.mobile_adj = adjacency_matrix(self.mobile_atoms)
+        self.mobile_adj = utils.adjacency_matrix(self.mobile_atoms)
         self.mobile_aprops = self.mobile_atoms.types.copy()
 
         # Compute isomorphisms at the first iteration
@@ -116,7 +115,7 @@ class SPyRMSD(AnalysisBase):
         # TODO: Check consistency of masses after graph isomorphism?
 
         try:
-            self.ref_atoms.universe.trajectory[self.ref_frame]
+            self.ref_atoms.universe.trajectory[self.reference_frame]
             self._ref_coordinates64 = \
                 self.ref_atoms.positions.copy().astype(np.float64)
         finally:
