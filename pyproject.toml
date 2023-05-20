@@ -16,12 +16,15 @@ maintainers = [
     {name = "Rocco Meli", email = "r.meli@bluemail.ch"},
 ]
 readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
+requires-python = ">=3.9"
+dependenciets = [
     "MDAnalysis>=2.0.0",
+    "spyrmsd"
 ]
 keywords = [
     "molecular simulations",
+    "MDAnalysis",
+    "MADKit"
 ]
 dynamic = [
     "version",

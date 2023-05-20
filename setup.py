@@ -44,13 +44,12 @@ setup(
     # Customize MANIFEST.in if the general case does not suit your needs
     # Comment out this line to prevent the files from being packaged with your software
     include_package_data=True,
-    python_requires=">=3.8",          # Python version restrictions
+    python_requires=">=3.9",
     # Allows `setup.py test` to work correctly with pytest
     setup_requires=[] + pytest_runner,
-    # Required packages, pulls from pip if needed
-    # do not use for Conda deployment
     install_requires=[
         "mdanalysis>=2.0.0",
+        "spyrmsd"
     ],
     # Additional entries you may want simply uncomment the lines you want and fill in the data
     # url='spyrmsdkit.readthedocs.io/en/latest/',  # Website
