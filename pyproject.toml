@@ -17,7 +17,7 @@ maintainers = [
 ]
 readme = "README.md"
 requires-python = ">=3.9"
-dependenciets = [
+dependencies = [
     "MDAnalysis>=2.0.0",
     "spyrmsd"
 ]
