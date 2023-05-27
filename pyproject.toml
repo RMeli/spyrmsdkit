@@ -41,9 +41,9 @@ doc = [
     "sphinx_rtd_theme",
 ]
 
-# [project.urls]
-# source = "https://github.com/RMeli/spyrmsdkit"
-# documentation = "https://spyrmsdkit.readthedocs.io"
+[project.urls]
+source = "https://github.com/RMeli/spyrmsdkit"
+documentation = "https://spyrmsdkit.readthedocs.io"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
