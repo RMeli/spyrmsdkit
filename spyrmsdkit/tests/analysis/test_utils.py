@@ -32,3 +32,4 @@ def test_adjacency_matrix():
     ])
 
     np.testing.assert_array_equal(A, expected)
+

@@ -4,7 +4,6 @@ from numpy.testing import assert_allclose
 import MDAnalysis as mda
 
 from spyrmsdkit.analysis.spyrmsd import SPyRMSD
-from spyrmsdkit.tests.utils import make_Universe
 
 import numpy as np
 
