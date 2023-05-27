@@ -7,30 +7,35 @@ from spyrmsdkit.analysis.spyrmsd import SPyRMSD
 
 import numpy as np
 
+
 class TestSPyRMSD(object):
     @pytest.fixture()
     def benzene(self):
         from collections import namedtuple
 
-        Molecule = namedtuple('Molecule', ["coords", "bonds"])
+        Molecule = namedtuple("Molecule", ["coords", "bonds"])
 
-        coords = np.array([
-            [+0.00000, +1.40272, 0.00000],
-            [-1.21479, +0.70136, 0.00000],
-            [-1.21479, -0.70136, 0.00000],
-            [+0.00000, -1.40272, 0.00000],
-            [+1.21479, -0.70136, 0.00000],
-            [+1.21479, +0.70136, 0.00000],
-        ])
+        coords = np.array(
+            [
+                [+0.00000, +1.40272, 0.00000],
+                [-1.21479, +0.70136, 0.00000],
+                [-1.21479, -0.70136, 0.00000],
+                [+0.00000, -1.40272, 0.00000],
+                [+1.21479, -0.70136, 0.00000],
+                [+1.21479, +0.70136, 0.00000],
+            ]
+        )
 
-        bonds = np.array([
-            [0, 1],
-            [1, 2],
-            [2, 3],
-            [3, 4],
-            [4, 5],
-            [5, 0],
-        ])
+        bonds = np.array(
+            [
+                [0, 1],
+                [1, 2],
+                [2, 3],
+                [3, 4],
+                [4, 5],
+                [5, 0],
+            ]
+        )
 
         return Molecule(coords, bonds)
 
@@ -43,14 +48,14 @@ class TestSPyRMSD(object):
         B = mda.Universe.empty(
             6, atom_resindex=[0] * 6, residue_segindex=[0], trajectory=True
         )
-        B.add_TopologyAttr('bonds', benzene.bonds)
-        B.add_TopologyAttr('type', ['C'] * 6)
-        B.add_TopologyAttr('resname', ['BNZ'])
+        B.add_TopologyAttr("bonds", benzene.bonds)
+        B.add_TopologyAttr("type", ["C"] * 6)
+        B.add_TopologyAttr("resname", ["BNZ"])
 
         coords = np.zeros((7, B.atoms.n_atoms, 3))
         coords[:, :, :] = benzene.coords
 
-        B.load_new(np.array(coords), order='fac')
+        B.load_new(np.array(coords), order="fac")
 
         return B.atoms
 
@@ -73,23 +78,25 @@ class TestSPyRMSD(object):
             residue_segindex=[0, 0],
             trajectory=True,
         )
-        B.add_TopologyAttr('bonds', benzene.bonds)
-        B.add_TopologyAttr('type', ['C'] * 6 + ['X'] * 14)
-        B.add_TopologyAttr('resname', ['BNZ'] + ['UNK'])
+        B.add_TopologyAttr("bonds", benzene.bonds)
+        B.add_TopologyAttr("type", ["C"] * 6 + ["X"] * 14)
+        B.add_TopologyAttr("resname", ["BNZ"] + ["UNK"])
 
         coords = np.zeros((n_frames, 20, 3))
         for i, angle in enumerate(angles):
             cog = np.mean(benzene.coords, axis=0)
             assert np.allclose(cog, [0, 0, 0])
 
-            R = rotation_matrix(angle, [0, 0, 1], cog)[:3,:3]
-            coords[i, :6, :] = benzene.coords @ R.T # Apply rotation to all coordinates
+            R = rotation_matrix(angle, [0, 0, 1], cog)[:3, :3]
+            coords[i, :6, :] = (
+                benzene.coords @ R.T
+            )  # Apply rotation to all coordinates
             coords[i, 6:, :] = np.random.random((14, 3))
 
         assert np.allclose(coords[0, :6], benzene.coords)
         assert np.allclose(coords[-1, :6], benzene.coords)
 
-        B.load_new(np.array(coords), order='fac')
+        B.load_new(np.array(coords), order="fac")
 
         return B.atoms
 
@@ -107,7 +114,7 @@ class TestSPyRMSD(object):
         R = SPyRMSD(benzene_traj_rotating)
         R.run()
 
-        assert np.allclose(R.results.rmsd[:,-1], 0.0, atol=1e-5)
+        assert np.allclose(R.results.rmsd[:, -1], 0.0, atol=1e-5)
 
     def test_rmsd_benzene(self, benzene_traj_still, benzene_traj_rotating):
         assert len(benzene_traj_still.universe.trajectory) == 7
@@ -120,12 +127,11 @@ class TestSPyRMSD(object):
         )
         R.run()
 
-        assert np.allclose(R.results.rmsd[:,-1], 0.0, atol=1e-5)
+        assert np.allclose(R.results.rmsd[:, -1], 0.0, atol=1e-5)
 
-    def test_rmsd_benzene_rand(self,
-            benzene_traj_rotating,
-            benzene_traj_rotating_random
-        ):
+    def test_rmsd_benzene_rand(
+        self, benzene_traj_rotating, benzene_traj_rotating_random
+    ):
         assert len(benzene_traj_rotating.universe.trajectory) == 7
         assert len(benzene_traj_rotating_random.universe.trajectory) == 7
 
@@ -135,7 +141,7 @@ class TestSPyRMSD(object):
         )
         R.run()
 
-        assert np.allclose(R.results.rmsd[:,-1], 0.0, atol=1e-5)
+        assert np.allclose(R.results.rmsd[:, -1], 0.0, atol=1e-5)
 
     def test_isomorphisms(self, benzene_traj_still):
         """
@@ -148,4 +154,4 @@ class TestSPyRMSD(object):
         assert len(R.isomorphisms) == 12
 
         # Check identity
-        assert ([0,1,2,3,4,5], [0,1,2,3,4,5]) in R.isomorphisms
+        assert ([0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5]) in R.isomorphisms

@@ -50,3 +50,7 @@ minversion = "6.0"
 testpaths = [
     "spyrmsdkit/tests",
 ]
+
+[tool.black]
+line-length = 80
+extend-exclude = "versioneer.py"

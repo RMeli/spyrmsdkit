@@ -13,12 +13,14 @@ from spyrmsdkit.analysis import utils
 from typing import Union, TYPE_CHECKING
 import logging
 import numpy as np
+
 # TODO: Add due
 
 if TYPE_CHECKING:
     from MDAnalysis.core.universe import Universe, AtomGroup
 
 logger = logging.getLogger("MDanalysis.analysis.spyrmsd")
+
 
 class SPyRMSD(AnalysisBase):
     """SPyRMSD class.
@@ -60,7 +62,7 @@ class SPyRMSD(AnalysisBase):
     frames: numpy.ndarray
         array of Timestep frame indices. Only exists after calling
         :meth:`SPyRMSD.run`
-    
+
     Raises
     ------
     SelectionError
@@ -72,19 +74,23 @@ class SPyRMSD(AnalysisBase):
         mobile: "AtomGroup",
         reference: "AtomGroup" = None,
         reference_frame: int = 0,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(mobile.universe.trajectory, **kwargs)
-        
+
         self.mobile_atoms = mobile
-        self.ref_atoms = reference if reference is not None else self.mobile_atoms
+        self.ref_atoms = (
+            reference if reference is not None else self.mobile_atoms
+        )
         self.reference_frame = reference_frame
 
         if len(self.ref_atoms) != len(self.mobile_atoms):
-            err = ("Reference and trajectory atom selections do "
-                   "not contain the same number of atoms: "
-                   f"N_ref={self.ref_atoms.n_atoms:d}, "
-                   f"N_traj={self.mobile_atoms.n_atoms:d}")
+            err = (
+                "Reference and trajectory atom selections do "
+                "not contain the same number of atoms: "
+                f"N_ref={self.ref_atoms.n_atoms:d}, "
+                f"N_traj={self.mobile_atoms.n_atoms:d}"
+            )
 
             logger.exception(err)
             raise SelectionError(err)
@@ -96,7 +102,7 @@ class SPyRMSD(AnalysisBase):
         SPyRMSD needs adjacency matrices for the molecular graphs of the
         selections and needs to perform graph isomorphism matching. The
         molecular graph is assumed to be constant, therefore graph
-        isomorphisms can be computed here. 
+        isomorphisms can be computed here.
         """
         current_frame = self.ref_atoms.universe.trajectory.ts.frame
 
@@ -116,15 +122,17 @@ class SPyRMSD(AnalysisBase):
 
         try:
             self.ref_atoms.universe.trajectory[self.reference_frame]
-            self._ref_coordinates64 = \
-                self.ref_atoms.positions.copy().astype(np.float64)
+            self._ref_coordinates64 = self.ref_atoms.positions.copy().astype(
+                np.float64
+            )
         finally:
             # Move back to the original frame
             self.ref_atoms.universe.trajectory[current_frame]
 
         # Pre-allocate memory for the mobile coordinates
-        self._mobile_coordinates64 = \
-            self.mobile_atoms.positions.copy().astype(np.float64)
+        self._mobile_coordinates64 = self.mobile_atoms.positions.copy().astype(
+            np.float64
+        )
 
         # Pre-allocate memory for the results
         self.results.rmsd = np.zeros((self.n_frames, 3))
@@ -140,13 +148,15 @@ class SPyRMSD(AnalysisBase):
         try:
             import spyrmsd.rmsd
         except ImportError:
-            raise ImportError("""ERROR --- spyrmsd was not found!
+            raise ImportError(
+                """ERROR --- spyrmsd was not found!
                 spyrmsd is required to compute symmetry-corrected RMSDs.
                 try installing it using pip eg:
                     pip install spyrmsd
                 or conda eg:
                     conda install spyrmsd -c conda-forge
-                """)
+                """
+            )
 
         # Get current coordinates
         self._mobile_coordinates64[:] = self.mobile_atoms.positions

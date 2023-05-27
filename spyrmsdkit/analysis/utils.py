@@ -4,6 +4,7 @@ Utility functions for analysis.
 
 import numpy as np
 
+
 def adjacency_matrix(atoms):
     """
     Compute adjacency matrix for selection, based on bonds.
