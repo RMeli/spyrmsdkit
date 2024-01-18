@@ -6,6 +6,7 @@ import MDAnalysis as mda
 from spyrmsdkit.analysis.spyrmsd import SPyRMSD
 
 import numpy as np
+import copy
 
 
 class TestSPyRMSD(object):
@@ -39,6 +40,48 @@ class TestSPyRMSD(object):
 
         return Molecule(coords, bonds)
 
+    @pytest.fixture
+    def benzene_with_hydrogens(self):
+        from collections import namedtuple
+
+        Molecule = namedtuple("Molecule", ["coords", "bonds"])
+
+        coords = np.array(
+            [
+                [+0.00000, +1.40272, 0.00000],
+                [0.00000, 2.49029, 0.00000],
+                [-1.21479, +0.70136, 0.00000],
+                [-2.15666, 1.24515, 0.00000],
+                [-1.21479, -0.70136, 0.00000],
+                [-2.15666, -1.24515, 0.00000],
+                [+0.00000, -1.40272, 0.00000],
+                [0.00000, -2.49029, 0.00000],
+                [+1.21479, -0.70136, 0.00000],
+                [2.15666, -1.24515, 0.00000],
+                [+1.21479, +0.70136, 0.00000],
+                [2.15666, 1.24515, 0.00000],
+            ]
+        )
+
+        bonds = np.array(
+            [
+                [0, 1],
+                [0, 2],
+                [0, 10],
+                [2, 3],
+                [2, 4],
+                [4, 5],
+                [4, 6],
+                [6, 7],
+                [6, 8],
+                [8, 9],
+                [8, 10],
+                [10, 11],
+            ]
+        )
+
+        return Molecule(coords, bonds)
+
     @pytest.fixture()
     def benzene_traj_still(self, benzene):
         """
@@ -56,6 +99,31 @@ class TestSPyRMSD(object):
         coords[:, :, :] = benzene.coords
 
         B.load_new(np.array(coords), order="fac")
+
+        return B.atoms
+
+    @pytest.fixture()
+    def benzene_with_hydrogens_traj_still(self, benzene_with_hydrogens):
+        """
+        Build fictitious trajectory for benzene, which remains still at every frame.
+        Returns atom group of the whole universe (benzene).
+        """
+        B = mda.Universe.empty(
+            12, atom_resindex=[0] * 12, residue_segindex=[0], trajectory=True
+        )
+        B.add_TopologyAttr("bonds", benzene_with_hydrogens.bonds)
+        B.add_TopologyAttr("type", ["C", "H"] * 6)
+        B.add_TopologyAttr("resname", ["BNZ"])
+
+        coords = np.zeros((7, B.atoms.n_atoms, 3))
+        coords[:, :, :] = benzene_with_hydrogens.coords
+
+        B.load_new(np.array(coords), order="fac")
+
+        print(B.atoms)
+        print(B.bonds)
+        print(B.select_atoms("not type H").atoms)
+        print(B.select_atoms("not type H").bonds)
 
         return B.atoms
 
@@ -124,6 +192,19 @@ class TestSPyRMSD(object):
             benzene_traj_rotating,
             reference=benzene_traj_still,
             ref_frame=-1,
+        )
+        R.run()
+
+        assert np.allclose(R.results.rmsd[:, -1], 0.0, atol=1e-5)
+
+    def test_hydrogen_stripping(self, benzene_with_hydrogens_traj_still):
+        assert len(benzene_with_hydrogens_traj_still.universe.trajectory) == 7
+        assert benzene_with_hydrogens_traj_still.n_atoms == 12
+
+        R = SPyRMSD(
+            benzene_with_hydrogens_traj_still.select_atoms(
+                "resname BNZ and (not type H)"
+            ),
         )
         R.run()
 
