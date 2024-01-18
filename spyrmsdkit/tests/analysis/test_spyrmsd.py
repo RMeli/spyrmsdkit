@@ -120,11 +120,6 @@ class TestSPyRMSD(object):
 
         B.load_new(np.array(coords), order="fac")
 
-        print(B.atoms)
-        print(B.bonds)
-        print(B.select_atoms("not type H").atoms)
-        print(B.select_atoms("not type H").bonds)
-
         return B.atoms
 
     @pytest.fixture()
