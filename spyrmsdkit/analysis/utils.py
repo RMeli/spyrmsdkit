@@ -24,19 +24,11 @@ def adjacency_matrix(ag):
     """
     n_atoms = len(ag)
 
-    # Allocate adjacency matrix
     A = np.zeros((n_atoms, n_atoms), dtype=int)
 
+    b = ag.get_connections("bonds", outside=False).to_indices()
+
     # Map bond indices to selection adjacency matrix
-    b = ag.bonds.to_indices()
-
-    # Remove dangling bonds
-    # An AtomGroup can contain bonds to atoms that are not part of the AtomGroup
-    mask = np.isin(b[:, 0], ag.atoms.indices) & np.isin(
-        b[:, 1], ag.atoms.indices
-    )
-    b = b[mask, :]
-
     # NumPy magic to re-index
     _, indices_flat = np.unique(b, return_inverse=True)
     indices = indices_flat.reshape(b.shape)
