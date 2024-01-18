@@ -22,9 +22,6 @@ def adjacency_matrix(ag):
     np.array
         Adjacency matrix
     """
-    n_atoms = len(ag)
-
-    A = np.zeros((n_atoms, n_atoms), dtype=int)
 
     b = ag.get_connections("bonds", outside=False).to_indices()
 
@@ -33,6 +30,7 @@ def adjacency_matrix(ag):
     _, indices_flat = np.unique(b, return_inverse=True)
     indices = indices_flat.reshape(b.shape)
 
+    n_atoms = len(ag)
     A = np.zeros((n_atoms, n_atoms), dtype=int)
     A[indices[:, 0], indices[:, 1]] = 1
 
