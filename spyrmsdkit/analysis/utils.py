@@ -5,7 +5,7 @@ Utility functions for analysis.
 import numpy as np
 
 
-def adjacency_matrix(atoms):
+def adjacency_matrix(ag):
     """
     Compute adjacency matrix for selection, based on bonds.
 
@@ -22,16 +22,15 @@ def adjacency_matrix(atoms):
     np.array
         Adjacency matrix
     """
-    n_atoms = len(atoms)
 
-    # Allocate adjacency matrix
-    A = np.zeros((n_atoms, n_atoms), dtype=int)
+    b = ag.get_connections("bonds", outside=False).to_indices()
 
     # Map bond indices to selection adjacency matrix
-    b = atoms.bonds.to_indices()
+    # NumPy magic to re-index
     _, indices_flat = np.unique(b, return_inverse=True)
     indices = indices_flat.reshape(b.shape)
 
+    n_atoms = len(ag)
     A = np.zeros((n_atoms, n_atoms), dtype=int)
     A[indices[:, 0], indices[:, 1]] = 1
 
