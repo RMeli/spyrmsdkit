@@ -3,10 +3,4 @@ spyrmsdkit
 MDAnalysis Kit (MDAKit) for SPyRMSD
 """
 
-# Handle versioneer
-from ._version import get_versions
-
-versions = get_versions()
-__version__ = versions["version"]
-__git_revision__ = versions["full-revisionid"]
-del get_versions, versions
+__version__ = "0.1.0-dev"

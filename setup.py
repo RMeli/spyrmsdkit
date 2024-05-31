@@ -8,8 +8,6 @@ from setuptools import setup, find_packages
 
 sys.path.append(os.path.dirname(__file__))
 
-import versioneer
-
 short_description = "MDAnalysis Kit (MDAKit) for SPyRMSD".strip().split("\n")[0]
 
 # from https://github.com/pytest-dev/pytest-runner#conditional-requirement
@@ -31,8 +29,7 @@ setup(
     description=short_description,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version="0.1.0-dev",
     license="GNU Public License v2+",
     # Which Python importable modules should be included when your package is installed
     # Handled automatically by setuptools. Use 'exclude' to prevent some specific
@@ -42,7 +39,7 @@ setup(
     # Customize MANIFEST.in if the general case does not suit your needs
     # Comment out this line to prevent the files from being packaged with your software
     include_package_data=True,
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     # Allows `setup.py test` to work correctly with pytest
     setup_requires=[] + pytest_runner,
     install_requires=["mdanalysis>=2.0.0", "spyrmsd"],
